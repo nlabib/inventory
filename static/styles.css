@@ -392,6 +392,75 @@ button:hover {
   margin-top: 1rem;
 }
 
+.management-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.management-panel,
+.product-panel {
+  padding: 1.5rem;
+}
+
+.management-form {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.management-form input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(97, 78, 53, 0.15);
+  background: #fff;
+  font-size: 1rem;
+}
+
+.management-form input:focus {
+  outline: 2px solid rgba(13, 124, 102, 0.2);
+  border-color: var(--accent);
+}
+
+.product-panel {
+  margin-top: 1rem;
+}
+
+.product-card {
+  margin-top: 1.25rem;
+  padding: 1.35rem;
+  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(238, 246, 243, 0.95));
+}
+
+.product-action {
+  margin: 0;
+  color: var(--accent-deep);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.78rem;
+}
+
+.product-card h3 {
+  margin: 0.7rem 0 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+  line-height: 1;
+}
+
+.product-meta {
+  margin: 0.65rem 0 0;
+  color: var(--muted);
+}
+
+.product-meta span {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .export-meta {
   margin-top: 1.25rem;
   display: grid;
@@ -419,7 +488,8 @@ code {
   .hero,
   .content-grid,
   .stats-grid,
-  .export-meta {
+  .export-meta,
+  .management-grid {
     grid-template-columns: 1fr;
   }
 

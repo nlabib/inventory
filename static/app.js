@@ -29,6 +29,18 @@ const elements = {
   modalItemUpc: document.querySelector("#modal-item-upc"),
   modalItemCost: document.querySelector("#modal-item-cost"),
   modalCurrentQuantity: document.querySelector("#modal-current-quantity"),
+  addProductForm: document.querySelector("#add-product-form"),
+  addUpc: document.querySelector("#add-upc"),
+  addName: document.querySelector("#add-name"),
+  addCost: document.querySelector("#add-cost"),
+  updateCostForm: document.querySelector("#update-cost-form"),
+  updateUpc: document.querySelector("#update-upc"),
+  updateCost: document.querySelector("#update-cost"),
+  productAction: document.querySelector("#product-action"),
+  productName: document.querySelector("#product-name"),
+  productUpc: document.querySelector("#product-upc"),
+  productCost: document.querySelector("#product-cost"),
+  productTime: document.querySelector("#product-time"),
 };
 
 let activeItem = null;
@@ -97,6 +109,21 @@ function renderState(state) {
     elements.lastTime.textContent = "-";
   }
 
+  if (state.last_product_change) {
+    const label = state.last_product_change.action === "added" ? "Added product" : "Updated cost price";
+    elements.productAction.textContent = label;
+    elements.productName.textContent = state.last_product_change.description;
+    elements.productUpc.textContent = state.last_product_change.upc;
+    elements.productCost.textContent = currencyFormatter.format(state.last_product_change.cost);
+    elements.productTime.textContent = state.last_product_change.timestamp;
+  } else {
+    elements.productAction.textContent = "No product change saved yet.";
+    elements.productName.textContent = "-";
+    elements.productUpc.textContent = "-";
+    elements.productCost.textContent = currencyFormatter.format(0);
+    elements.productTime.textContent = "-";
+  }
+
   renderRecentScans(state.recent_scans || []);
 }
 
@@ -158,6 +185,11 @@ elements.scanForm.addEventListener("submit", async (event) => {
   } catch (error) {
     elements.statusMessage.textContent = error.message;
     elements.statusMessage.dataset.state = "error";
+    if (error.message.includes("No inventory record found")) {
+      elements.addUpc.value = upc;
+      elements.addName.focus();
+      return;
+    }
     elements.scanInput.select();
     elements.scanInput.focus();
   }
@@ -229,6 +261,57 @@ elements.resetButton.addEventListener("click", async () => {
   } catch (error) {
     elements.statusMessage.textContent = error.message;
     elements.statusMessage.dataset.state = "error";
+  }
+});
+
+elements.addProductForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    elements.statusMessage.textContent = "Adding product...";
+    elements.statusMessage.dataset.state = "working";
+    const state = await apiRequest("/api/products", {
+      method: "POST",
+      body: JSON.stringify({
+        upc: elements.addUpc.value.trim(),
+        description: elements.addName.value.trim(),
+        cost: elements.addCost.value.trim(),
+      }),
+    });
+    renderState(state);
+    elements.statusMessage.textContent = `Added ${state.last_product_change.description}`;
+    elements.statusMessage.dataset.state = "success";
+    elements.addProductForm.reset();
+    elements.scanInput.focus();
+  } catch (error) {
+    elements.statusMessage.textContent = error.message;
+    elements.statusMessage.dataset.state = "error";
+    elements.addUpc.focus();
+  }
+});
+
+elements.updateCostForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    elements.statusMessage.textContent = "Updating cost price...";
+    elements.statusMessage.dataset.state = "working";
+    const state = await apiRequest("/api/products/update-cost", {
+      method: "POST",
+      body: JSON.stringify({
+        upc: elements.updateUpc.value.trim(),
+        cost: elements.updateCost.value.trim(),
+      }),
+    });
+    renderState(state);
+    elements.statusMessage.textContent = `Updated cost for ${state.last_product_change.description}`;
+    elements.statusMessage.dataset.state = "success";
+    elements.updateCostForm.reset();
+    elements.scanInput.focus();
+  } catch (error) {
+    elements.statusMessage.textContent = error.message;
+    elements.statusMessage.dataset.state = "error";
+    elements.updateUpc.focus();
   }
 });
 

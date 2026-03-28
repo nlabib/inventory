@@ -12,6 +12,7 @@ from decimal import Decimal, InvalidOperation
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Dict, List, Optional
 from xml.sax.saxutils import escape
 
@@ -49,6 +50,13 @@ def parse_cost(value: str) -> Decimal:
 
 def decimal_to_float(value: Decimal) -> float:
     return float(value.quantize(Decimal("0.01")))
+
+
+def decimal_to_string(value: Decimal) -> str:
+    normalized = format(value.quantize(Decimal("0.01")), "f")
+    if "." in normalized:
+        normalized = normalized.rstrip("0").rstrip(".")
+    return normalized or "0"
 
 
 def excel_column_name(index: int) -> str:
@@ -168,6 +176,7 @@ class InventorySession:
         self.scan_counts: Counter[str] = Counter()
         self.scan_log: List[Dict[str, object]] = []
         self.last_scan: Optional[Dict[str, object]] = None
+        self.last_product_change: Optional[Dict[str, object]] = None
         self.last_saved_at: Optional[str] = None
         self.csv_export_path = EXPORT_DIR / f"{self.source_csv.stem}-scanned.csv"
         self.xlsx_export_path = EXPORT_DIR / f"{self.source_csv.stem}-scanned.xlsx"
@@ -211,6 +220,15 @@ class InventorySession:
             export_rows.append(export_row)
         return export_rows
 
+    def write_catalog(self) -> None:
+        self.source_csv.parent.mkdir(parents=True, exist_ok=True)
+        with NamedTemporaryFile("w", newline="", encoding="utf-8", delete=False, dir=str(self.source_csv.parent)) as temp_file:
+            writer = csv.DictWriter(temp_file, fieldnames=self.fieldnames)
+            writer.writeheader()
+            writer.writerows(self.rows)
+            temp_path = Path(temp_file.name)
+        temp_path.replace(self.source_csv)
+
     def persist_exports(self) -> None:
         export_headers = [header for header in self.fieldnames if header != SCAN_COLUMN] + [SCAN_COLUMN]
         export_rows = self.export_rows()
@@ -242,6 +260,7 @@ class InventorySession:
             "csv_export_path": str(self.csv_export_path),
             "xlsx_export_path": str(self.xlsx_export_path),
             "last_saved_at": self.last_saved_at,
+            "last_product_change": self.last_product_change,
         }
 
     def lookup(self, upc: str) -> Dict[str, object]:
@@ -254,6 +273,86 @@ class InventorySession:
             raise LookupError(f"No inventory record found for UPC {cleaned_upc}.")
 
         return {"item": self.serialize_item(item)}
+
+    def default_catalog_row(self, upc: str, description: str, cost: Decimal) -> Dict[str, str]:
+        row = {header: "" for header in self.fieldnames}
+        row["UPC"] = upc
+        row["Description"] = description
+        row["Cost"] = decimal_to_string(cost)
+
+        if "QoH" in row:
+            row["QoH"] = "0"
+        if "Net Sales" in row:
+            row["Net Sales"] = "0"
+        if "Foodstamp" in row and not row["Foodstamp"]:
+            row["Foodstamp"] = "FALSE"
+        if "Scale" in row and not row["Scale"]:
+            row["Scale"] = "FALSE"
+
+        return row
+
+    def product_change_payload(self, item: InventoryItem, action: str) -> Dict[str, object]:
+        return {
+            "action": action,
+            "upc": item.upc,
+            "description": item.description,
+            "cost": decimal_to_float(item.cost),
+            "timestamp": datetime.now().astimezone().strftime("%I:%M:%S %p"),
+        }
+
+    def add_product(self, upc: str, description: str, cost_value: str) -> Dict[str, object]:
+        cleaned_upc = normalize_upc(upc)
+        cleaned_description = str(description or "").strip()
+        cost = parse_cost(cost_value)
+
+        if not cleaned_upc:
+            raise ValueError("Enter a UPC for the new product.")
+        if not cleaned_description:
+            raise ValueError("Enter a product name.")
+        if cost < 0:
+            raise ValueError("Cost price cannot be negative.")
+
+        with self.lock:
+            for lookup_key in upc_lookup_keys(cleaned_upc):
+                if lookup_key in self.lookup_items:
+                    raise ValueError(f"A product with UPC {cleaned_upc} already exists.")
+
+            new_row = self.default_catalog_row(cleaned_upc, cleaned_description, cost)
+            self.rows.append(new_row)
+            self.write_catalog()
+            self.load_inventory()
+            item = self.lookup_items[cleaned_upc]
+            self.last_product_change = self.product_change_payload(item, "added")
+            self.persist_exports()
+            return self.summary()
+
+    def update_cost(self, upc: str, cost_value: str) -> Dict[str, object]:
+        cleaned_upc = normalize_upc(upc)
+        cost = parse_cost(cost_value)
+
+        if not cleaned_upc:
+            raise ValueError("Enter a UPC to update.")
+        if cost < 0:
+            raise ValueError("Cost price cannot be negative.")
+
+        with self.lock:
+            item = self.lookup_items.get(cleaned_upc)
+            if item is None:
+                raise LookupError(f"No inventory record found for UPC {cleaned_upc}.")
+
+            item.row["Cost"] = decimal_to_string(cost)
+            self.write_catalog()
+            self.load_inventory()
+            refreshed_item = self.lookup_items.get(item.upc, self.lookup_items.get(cleaned_upc))
+            if refreshed_item is None:
+                raise LookupError(f"Could not reload inventory record for UPC {cleaned_upc}.")
+
+            if self.last_scan and self.last_scan.get("upc") == refreshed_item.upc:
+                self.last_scan["cost"] = decimal_to_float(refreshed_item.cost)
+
+            self.last_product_change = self.product_change_payload(refreshed_item, "updated")
+            self.persist_exports()
+            return self.summary()
 
     def save_quantity(self, upc: str, quantity: int) -> Dict[str, object]:
         cleaned_upc = normalize_upc(upc)
@@ -346,6 +445,35 @@ class InventoryRequestHandler(SimpleHTTPRequestHandler):
         if self.path == "/api/reset":
             summary = self.inventory.reset()
             self.send_json(summary)
+            return
+
+        if self.path == "/api/products":
+            try:
+                payload = self.read_json()
+                summary = self.inventory.add_product(
+                    str(payload.get("upc", "")),
+                    str(payload.get("description", "")),
+                    str(payload.get("cost", "")),
+                )
+                self.send_json(summary)
+            except LookupError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.NOT_FOUND)
+            except ValueError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if self.path == "/api/products/update-cost":
+            try:
+                payload = self.read_json()
+                summary = self.inventory.update_cost(
+                    str(payload.get("upc", "")),
+                    str(payload.get("cost", "")),
+                )
+                self.send_json(summary)
+            except LookupError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.NOT_FOUND)
+            except ValueError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.BAD_REQUEST)
             return
 
         self.send_error(HTTPStatus.NOT_FOUND, "Endpoint not found.")

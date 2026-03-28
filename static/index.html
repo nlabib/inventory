@@ -120,6 +120,66 @@
             </div>
           </div>
         </section>
+
+        <section class="management-grid">
+          <article class="panel management-panel">
+            <div class="section-heading">
+              <p class="eyebrow">Catalog Tools</p>
+              <h2>Add a new product</h2>
+            </div>
+            <form id="add-product-form" class="management-form">
+              <label class="scan-label" for="add-upc">UPC</label>
+              <input id="add-upc" type="text" autocomplete="off" placeholder="Barcode / UPC" />
+
+              <label class="scan-label" for="add-name">Product name</label>
+              <input id="add-name" type="text" autocomplete="off" placeholder="Product title" />
+
+              <label class="scan-label" for="add-cost">Cost price</label>
+              <input id="add-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+
+              <button type="submit">Add Product</button>
+            </form>
+          </article>
+
+          <article class="panel management-panel">
+            <div class="section-heading">
+              <p class="eyebrow">Catalog Tools</p>
+              <h2>Update cost price</h2>
+            </div>
+            <form id="update-cost-form" class="management-form">
+              <label class="scan-label" for="update-upc">UPC</label>
+              <input id="update-upc" type="text" autocomplete="off" placeholder="Existing UPC" />
+
+              <label class="scan-label" for="update-cost">New cost price</label>
+              <input id="update-cost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+
+              <button type="submit">Update Cost</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="panel product-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Catalog Activity</p>
+            <h2>Latest product change</h2>
+          </div>
+          <div class="product-card">
+            <p class="product-action" id="product-action">No product change saved yet.</p>
+            <h3 id="product-name">-</h3>
+            <p class="product-meta">
+              UPC:
+              <span id="product-upc">-</span>
+            </p>
+            <p class="product-meta">
+              Cost Price:
+              <span id="product-cost">$0.00</span>
+            </p>
+            <p class="product-meta">
+              Saved at:
+              <span id="product-time">-</span>
+            </p>
+          </div>
+        </section>
       </main>
     </div>
 
