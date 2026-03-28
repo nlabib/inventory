@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Store Inventory Scanner</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="aurora aurora-one"></div>
+      <div class="aurora aurora-two"></div>
+
+      <main class="dashboard">
+        <section class="hero panel">
+          <div>
+            <p class="eyebrow">Scanner-Ready Inventory</p>
+            <h1>Track every scan in real time.</h1>
+            <p class="hero-copy">
+              Use your barcode scanner or type a UPC, press Enter, and the dashboard
+              updates instantly while the export file is auto-saved.
+            </p>
+          </div>
+
+          <form id="scan-form" class="scan-form">
+            <label class="scan-label" for="scan-input">Barcode / UPC</label>
+            <div class="scan-input-row">
+              <input
+                id="scan-input"
+                name="upc"
+                type="text"
+                inputmode="numeric"
+                autocomplete="off"
+                placeholder="Scan here..."
+                autofocus
+              />
+              <button type="submit">Scan</button>
+            </div>
+            <p id="status-message" class="status-message">Waiting for the first scan.</p>
+          </form>
+        </section>
+
+        <section class="stats-grid">
+          <article class="stat-card panel">
+            <span class="stat-label">Total Scanned</span>
+            <strong id="total-items" class="stat-value">0</strong>
+          </article>
+          <article class="stat-card panel">
+            <span class="stat-label">Unique Items</span>
+            <strong id="unique-items" class="stat-value">0</strong>
+          </article>
+          <article class="stat-card panel accent-card">
+            <span class="stat-label">Running Total Cost</span>
+            <strong id="running-total" class="stat-value">$0.00</strong>
+          </article>
+          <article class="stat-card panel">
+            <span class="stat-label">Last Barcode</span>
+            <strong id="last-upc" class="stat-value compact">-</strong>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel spotlight">
+            <div class="section-heading">
+              <p class="eyebrow">Last Scan</p>
+              <h2>Item spotlight</h2>
+            </div>
+            <div class="spotlight-card">
+              <h3 id="last-title">No item scanned yet</h3>
+              <p class="spotlight-meta">
+                Cost Price:
+                <span id="last-cost">$0.00</span>
+              </p>
+              <p class="spotlight-meta">
+                Count for this item:
+                <span id="last-count">0</span>
+              </p>
+              <p class="spotlight-meta">
+                Last scan time:
+                <span id="last-time">-</span>
+              </p>
+            </div>
+            <div class="action-row">
+              <button id="reset-button" class="secondary-button" type="button">Reset Session</button>
+            </div>
+          </article>
+
+          <article class="panel recent-panel">
+            <div class="section-heading">
+              <p class="eyebrow">Live Feed</p>
+              <h2>Recent scans</h2>
+            </div>
+            <div id="recent-scans" class="recent-list">
+              <p class="empty-state">Recent scans will appear here.</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel export-panel">
+          <div class="section-heading">
+            <p class="eyebrow">Auto Save</p>
+            <h2>Spreadsheet output</h2>
+          </div>
+          <div class="export-meta">
+            <div>
+              <span class="export-label">Source file</span>
+              <code id="source-file">-</code>
+            </div>
+            <div>
+              <span class="export-label">CSV export</span>
+              <code id="csv-export">-</code>
+            </div>
+            <div>
+              <span class="export-label">Excel export</span>
+              <code id="xlsx-export">-</code>
+            </div>
+            <div>
+              <span class="export-label">Last saved</span>
+              <code id="last-saved">-</code>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

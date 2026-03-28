@@ -1,0 +1,368 @@
+:root {
+  --bg: #f5efe5;
+  --panel: rgba(255, 252, 246, 0.82);
+  --panel-border: rgba(97, 78, 53, 0.12);
+  --text: #1f1a14;
+  --muted: #74634d;
+  --accent: #0d7c66;
+  --accent-deep: #0b5f50;
+  --warm: #e58d4a;
+  --danger: #b43f3f;
+  --shadow: 0 24px 64px rgba(59, 46, 28, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Avenir Next", "Trebuchet MS", "Gill Sans", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(229, 141, 74, 0.24), transparent 30%),
+    radial-gradient(circle at top right, rgba(13, 124, 102, 0.22), transparent 32%),
+    linear-gradient(160deg, #f6f0e8 0%, #efe3cf 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.aurora {
+  position: fixed;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 999px;
+  filter: blur(30px);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.aurora-one {
+  top: -8rem;
+  right: -8rem;
+  background: rgba(13, 124, 102, 0.35);
+}
+
+.aurora-two {
+  left: -10rem;
+  bottom: -10rem;
+  background: rgba(229, 141, 74, 0.32);
+}
+
+.dashboard {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+  position: relative;
+  z-index: 1;
+}
+
+.panel {
+  background: var(--panel);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--panel-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem;
+  padding: 2rem;
+  align-items: center;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.77rem;
+  color: var(--accent-deep);
+  margin: 0 0 0.75rem;
+  font-weight: 700;
+}
+
+.hero h1,
+.section-heading h2 {
+  font-family: "Georgia", "Times New Roman", serif;
+  line-height: 1;
+  margin: 0;
+}
+
+.hero h1 {
+  font-size: clamp(2.4rem, 5vw, 4.3rem);
+  max-width: 10ch;
+}
+
+.hero-copy {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  max-width: 56ch;
+}
+
+.scan-form {
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(97, 78, 53, 0.09);
+}
+
+.scan-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+}
+
+.scan-input-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.scan-input-row input {
+  flex: 1;
+  padding: 1rem 1.15rem;
+  border-radius: 18px;
+  border: 1px solid rgba(97, 78, 53, 0.15);
+  background: #fff;
+  font-size: 1.2rem;
+}
+
+.scan-input-row input:focus {
+  outline: 2px solid rgba(13, 124, 102, 0.2);
+  border-color: var(--accent);
+}
+
+button {
+  border: 0;
+  border-radius: 18px;
+  padding: 0.95rem 1.35rem;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+.scan-input-row button {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: white;
+}
+
+.secondary-button {
+  background: rgba(180, 63, 63, 0.1);
+  color: var(--danger);
+}
+
+.status-message {
+  margin: 0.9rem 0 0;
+  min-height: 1.5rem;
+  color: var(--muted);
+}
+
+.status-message[data-state="success"] {
+  color: var(--accent-deep);
+}
+
+.status-message[data-state="error"] {
+  color: var(--danger);
+}
+
+.stats-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  padding: 1.25rem 1.35rem;
+}
+
+.stat-label {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
+  line-height: 1;
+}
+
+.stat-value.compact {
+  font-size: clamp(1.15rem, 2vw, 1.7rem);
+  word-break: break-all;
+}
+
+.accent-card {
+  background: linear-gradient(135deg, rgba(13, 124, 102, 0.94), rgba(11, 95, 80, 0.95));
+  color: white;
+}
+
+.accent-card .stat-label {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.content-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 1rem;
+}
+
+.spotlight,
+.recent-panel,
+.export-panel {
+  padding: 1.5rem;
+}
+
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spotlight-card {
+  margin-top: 1.25rem;
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.96), rgba(255, 243, 227, 0.94));
+  min-height: 15rem;
+}
+
+.spotlight-card h3 {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1;
+  margin: 0 0 1rem;
+}
+
+.spotlight-meta {
+  margin: 0.55rem 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.spotlight-meta span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.action-row {
+  margin-top: 1rem;
+}
+
+.recent-list {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(97, 78, 53, 0.08);
+}
+
+.recent-item h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.recent-item p,
+.recent-item time {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+}
+
+.recent-item-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.empty-state {
+  margin: 0;
+  color: var(--muted);
+}
+
+.export-panel {
+  margin-top: 1rem;
+}
+
+.export-meta {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.export-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+code {
+  display: block;
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+  word-break: break-word;
+}
+
+@media (max-width: 980px) {
+  .hero,
+  .content-grid,
+  .stats-grid,
+  .export-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard {
+    width: min(100% - 1rem, 100%);
+    padding-top: 1rem;
+  }
+
+  .hero,
+  .spotlight,
+  .recent-panel,
+  .export-panel {
+    padding: 1.15rem;
+  }
+
+  .scan-input-row {
+    flex-direction: column;
+  }
+
+  .spotlight-card h3 {
+    font-size: 1.75rem;
+  }
+}
