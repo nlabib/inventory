@@ -7,6 +7,7 @@ A local scanner-friendly inventory dashboard for `/Users/nasimullabib/Downloads/
 - Shows the total number of scanned items.
 - Shows the title and cost price of the latest scanned item.
 - Keeps a running total cost for everything scanned in the current session.
+- Opens a quantity popup after each barcode scan so you can enter how many are on hand.
 - Auto-saves exports with a new `Scanned Count` column after every scan.
 - Produces both CSV and Excel-compatible `.xlsx` exports.
 

@@ -17,7 +17,7 @@
             <p class="eyebrow">Scanner-Ready Inventory</p>
             <h1>Track every scan in real time.</h1>
             <p class="hero-copy">
-              Use your barcode scanner or type a UPC, press Enter, and the dashboard
+              Scan a barcode, enter the quantity in the popup, and the dashboard
               updates instantly while the export file is auto-saved.
             </p>
           </div>
@@ -36,7 +36,7 @@
               />
               <button type="submit">Scan</button>
             </div>
-            <p id="status-message" class="status-message">Waiting for the first scan.</p>
+            <p id="status-message" class="status-message">Waiting for the first barcode.</p>
           </form>
         </section>
 
@@ -88,7 +88,7 @@
           <article class="panel recent-panel">
             <div class="section-heading">
               <p class="eyebrow">Live Feed</p>
-              <h2>Recent scans</h2>
+              <h2>Recent quantity saves</h2>
             </div>
             <div id="recent-scans" class="recent-list">
               <p class="empty-state">Recent scans will appear here.</p>
@@ -121,6 +121,38 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div id="quantity-modal" class="modal-backdrop hidden" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-heading">
+          <p class="eyebrow">Quantity Entry</p>
+          <h2 id="modal-title">Set item quantity</h2>
+        </div>
+        <div class="modal-item">
+          <h3 id="modal-item-title">-</h3>
+          <p class="modal-item-meta">
+            UPC:
+            <span id="modal-item-upc">-</span>
+          </p>
+          <p class="modal-item-meta">
+            Cost Price:
+            <span id="modal-item-cost">$0.00</span>
+          </p>
+          <p class="modal-item-meta">
+            Current saved quantity:
+            <span id="modal-current-quantity">0</span>
+          </p>
+        </div>
+        <form id="quantity-form" class="quantity-form">
+          <label class="scan-label" for="quantity-input">How many are there?</label>
+          <input id="quantity-input" type="number" min="0" step="1" inputmode="numeric" />
+          <div class="modal-actions">
+            <button id="quantity-cancel" class="ghost-button" type="button">Cancel</button>
+            <button type="submit">Save Quantity</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script src="/app.js" defer></script>

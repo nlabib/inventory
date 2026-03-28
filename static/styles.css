@@ -305,6 +305,89 @@ button:hover {
   color: var(--muted);
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(31, 26, 20, 0.45);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal-card {
+  width: min(540px, 100%);
+  padding: 1.5rem;
+  border-radius: 28px;
+  background: linear-gradient(160deg, rgba(255, 252, 246, 0.98), rgba(245, 235, 217, 0.98));
+  box-shadow: 0 30px 80px rgba(31, 26, 20, 0.22);
+}
+
+.modal-heading h2,
+.modal-item h3 {
+  font-family: "Georgia", "Times New Roman", serif;
+  margin: 0;
+}
+
+.modal-item {
+  margin-top: 1rem;
+  padding: 1.2rem;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.modal-item h3 {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.modal-item-meta {
+  margin: 0.55rem 0 0;
+  color: var(--muted);
+}
+
+.modal-item-meta span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.quantity-form {
+  margin-top: 1rem;
+}
+
+.quantity-form input {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(97, 78, 53, 0.15);
+  background: #fff;
+  font-size: 1.35rem;
+}
+
+.quantity-form input:focus {
+  outline: 2px solid rgba(13, 124, 102, 0.2);
+  border-color: var(--accent);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.ghost-button {
+  background: rgba(116, 99, 77, 0.12);
+  color: var(--text);
+}
+
 .export-panel {
   margin-top: 1rem;
 }

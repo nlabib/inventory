@@ -27,6 +27,19 @@ def normalize_upc(value: str) -> str:
     return str(value or "").strip()
 
 
+def upc_lookup_keys(value: str) -> List[str]:
+    cleaned = normalize_upc(value)
+    if not cleaned:
+        return []
+
+    keys = {cleaned}
+    if cleaned.isdigit():
+        stripped = cleaned.lstrip("0") or "0"
+        keys.add(stripped)
+        keys.add(cleaned.zfill(13))
+    return list(keys)
+
+
 def parse_cost(value: str) -> Decimal:
     try:
         return Decimal(str(value or "").strip() or "0")
@@ -151,6 +164,7 @@ class InventorySession:
         self.fieldnames: List[str] = []
         self.rows: List[Dict[str, str]] = []
         self.items: Dict[str, InventoryItem] = {}
+        self.lookup_items: Dict[str, InventoryItem] = {}
         self.scan_counts: Counter[str] = Counter()
         self.scan_log: List[Dict[str, object]] = []
         self.last_scan: Optional[Dict[str, object]] = None
@@ -160,12 +174,22 @@ class InventorySession:
         self.load_inventory()
         self.persist_exports()
 
+    def serialize_item(self, item: InventoryItem) -> Dict[str, object]:
+        current_quantity = int(self.scan_counts.get(item.upc, 0))
+        return {
+            "upc": item.upc,
+            "description": item.description,
+            "cost": decimal_to_float(item.cost),
+            "current_quantity": current_quantity,
+        }
+
     def load_inventory(self) -> None:
         with self.source_csv.open(newline="", encoding="utf-8-sig") as csv_file:
             reader = csv.DictReader(csv_file)
             self.fieldnames = list(reader.fieldnames or [])
             self.rows = []
             self.items = {}
+            self.lookup_items = {}
             for raw_row in reader:
                 row = {key: value or "" for key, value in raw_row.items()}
                 upc = normalize_upc(row.get("UPC", ""))
@@ -173,7 +197,10 @@ class InventorySession:
                 cost = parse_cost(row.get("Cost", "0"))
                 self.rows.append(row)
                 if upc:
-                    self.items[upc] = InventoryItem(upc=upc, description=description, cost=cost, row=row)
+                    item = InventoryItem(upc=upc, description=description, cost=cost, row=row)
+                    self.items[upc] = item
+                    for lookup_key in upc_lookup_keys(upc):
+                        self.lookup_items[lookup_key] = item
 
     def export_rows(self) -> List[Dict[str, str]]:
         export_rows: List[Dict[str, str]] = []
@@ -217,23 +244,35 @@ class InventorySession:
             "last_saved_at": self.last_saved_at,
         }
 
-    def scan(self, upc: str) -> Dict[str, object]:
+    def lookup(self, upc: str) -> Dict[str, object]:
         cleaned_upc = normalize_upc(upc)
         if not cleaned_upc:
             raise ValueError("Scan a barcode first.")
 
+        item = self.lookup_items.get(cleaned_upc)
+        if item is None:
+            raise LookupError(f"No inventory record found for UPC {cleaned_upc}.")
+
+        return {"item": self.serialize_item(item)}
+
+    def save_quantity(self, upc: str, quantity: int) -> Dict[str, object]:
+        cleaned_upc = normalize_upc(upc)
+        if not cleaned_upc:
+            raise ValueError("Scan a barcode first.")
+        if quantity < 0:
+            raise ValueError("Quantity cannot be negative.")
+
         with self.lock:
-            item = self.items.get(cleaned_upc)
+            item = self.lookup_items.get(cleaned_upc)
             if item is None:
                 raise LookupError(f"No inventory record found for UPC {cleaned_upc}.")
 
-            self.scan_counts[cleaned_upc] += 1
-            count_for_item = self.scan_counts[cleaned_upc]
+            self.scan_counts[item.upc] = quantity
             scan_record = {
                 "upc": item.upc,
                 "description": item.description,
                 "cost": decimal_to_float(item.cost),
-                "count_for_item": count_for_item,
+                "count_for_item": quantity,
                 "timestamp": datetime.now().astimezone().strftime("%I:%M:%S %p"),
             }
             self.last_scan = scan_record
@@ -281,14 +320,26 @@ class InventoryRequestHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self) -> None:
-        if self.path == "/api/scan":
+        if self.path == "/api/lookup":
             try:
                 payload = self.read_json()
-                summary = self.inventory.scan(str(payload.get("upc", "")))
-                self.send_json(summary)
+                item = self.inventory.lookup(str(payload.get("upc", "")))
+                self.send_json(item)
             except LookupError as error:
                 self.send_json({"error": str(error)}, status=HTTPStatus.NOT_FOUND)
             except ValueError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.BAD_REQUEST)
+            return
+
+        if self.path == "/api/scan":
+            try:
+                payload = self.read_json()
+                quantity = int(payload.get("quantity", 0))
+                summary = self.inventory.save_quantity(str(payload.get("upc", "")), quantity)
+                self.send_json(summary)
+            except LookupError as error:
+                self.send_json({"error": str(error)}, status=HTTPStatus.NOT_FOUND)
+            except (TypeError, ValueError) as error:
                 self.send_json({"error": str(error)}, status=HTTPStatus.BAD_REQUEST)
             return
 

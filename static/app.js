@@ -21,7 +21,17 @@ const elements = {
   xlsxExport: document.querySelector("#xlsx-export"),
   lastSaved: document.querySelector("#last-saved"),
   resetButton: document.querySelector("#reset-button"),
+  quantityModal: document.querySelector("#quantity-modal"),
+  quantityForm: document.querySelector("#quantity-form"),
+  quantityInput: document.querySelector("#quantity-input"),
+  quantityCancel: document.querySelector("#quantity-cancel"),
+  modalItemTitle: document.querySelector("#modal-item-title"),
+  modalItemUpc: document.querySelector("#modal-item-upc"),
+  modalItemCost: document.querySelector("#modal-item-cost"),
+  modalCurrentQuantity: document.querySelector("#modal-current-quantity"),
 };
+
+let activeItem = null;
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
@@ -41,7 +51,7 @@ async function apiRequest(path, options = {}) {
 
 function renderRecentScans(scans) {
   if (!scans.length) {
-    elements.recentScans.innerHTML = '<p class="empty-state">Recent scans will appear here.</p>';
+    elements.recentScans.innerHTML = '<p class="empty-state">Recent quantity saves will appear here.</p>';
     return;
   }
 
@@ -55,7 +65,7 @@ function renderRecentScans(scans) {
           </div>
           <div class="recent-item-meta">
             <strong>${currencyFormatter.format(scan.cost)}</strong>
-            <span>x${scan.count_for_item}</span>
+            <span>Qty ${scan.count_for_item}</span>
             <time>${scan.timestamp}</time>
           </div>
         </article>
@@ -90,6 +100,30 @@ function renderState(state) {
   renderRecentScans(state.recent_scans || []);
 }
 
+function openQuantityModal(item) {
+  activeItem = item;
+  elements.modalItemTitle.textContent = item.description;
+  elements.modalItemUpc.textContent = item.upc;
+  elements.modalItemCost.textContent = currencyFormatter.format(item.cost);
+  elements.modalCurrentQuantity.textContent = item.current_quantity;
+  elements.quantityInput.value = item.current_quantity;
+  elements.quantityModal.classList.remove("hidden");
+  elements.quantityModal.setAttribute("aria-hidden", "false");
+
+  window.requestAnimationFrame(() => {
+    elements.quantityInput.focus();
+    elements.quantityInput.select();
+  });
+}
+
+function closeQuantityModal() {
+  activeItem = null;
+  elements.quantityModal.classList.add("hidden");
+  elements.quantityModal.setAttribute("aria-hidden", "true");
+  elements.scanInput.value = "";
+  elements.scanInput.focus();
+}
+
 async function loadState() {
   try {
     const state = await apiRequest("/api/state", { method: "GET" });
@@ -112,22 +146,73 @@ elements.scanForm.addEventListener("submit", async (event) => {
   }
 
   try {
-    elements.statusMessage.textContent = "Saving scan...";
+    elements.statusMessage.textContent = "Looking up item...";
     elements.statusMessage.dataset.state = "working";
-    const state = await apiRequest("/api/scan", {
+    const lookup = await apiRequest("/api/lookup", {
       method: "POST",
       body: JSON.stringify({ upc }),
     });
-    renderState(state);
-    elements.statusMessage.textContent = `Saved ${state.last_scan.description}`;
+    openQuantityModal(lookup.item);
+    elements.statusMessage.textContent = `Enter quantity for ${lookup.item.description}`;
     elements.statusMessage.dataset.state = "success";
-    elements.scanInput.value = "";
-    elements.scanInput.focus();
   } catch (error) {
     elements.statusMessage.textContent = error.message;
     elements.statusMessage.dataset.state = "error";
     elements.scanInput.select();
     elements.scanInput.focus();
+  }
+});
+
+elements.quantityForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!activeItem) {
+    return;
+  }
+
+  const quantity = Number.parseInt(elements.quantityInput.value, 10);
+  if (Number.isNaN(quantity) || quantity < 0) {
+    elements.statusMessage.textContent = "Enter a valid quantity of 0 or more.";
+    elements.statusMessage.dataset.state = "error";
+    elements.quantityInput.focus();
+    elements.quantityInput.select();
+    return;
+  }
+
+  try {
+    elements.statusMessage.textContent = "Saving quantity...";
+    elements.statusMessage.dataset.state = "working";
+    const state = await apiRequest("/api/scan", {
+      method: "POST",
+      body: JSON.stringify({ upc: activeItem.upc, quantity }),
+    });
+    renderState(state);
+    elements.statusMessage.textContent = `Saved quantity ${quantity} for ${state.last_scan.description}`;
+    elements.statusMessage.dataset.state = "success";
+    closeQuantityModal();
+  } catch (error) {
+    elements.statusMessage.textContent = error.message;
+    elements.statusMessage.dataset.state = "error";
+    elements.quantityInput.focus();
+    elements.quantityInput.select();
+  }
+});
+
+elements.quantityCancel.addEventListener("click", () => {
+  elements.statusMessage.textContent = "Quantity entry canceled.";
+  elements.statusMessage.dataset.state = "working";
+  closeQuantityModal();
+});
+
+elements.quantityModal.addEventListener("click", (event) => {
+  if (event.target === elements.quantityModal) {
+    closeQuantityModal();
+  }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.quantityModal.classList.contains("hidden")) {
+    closeQuantityModal();
   }
 });
 
